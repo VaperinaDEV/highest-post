@@ -9,9 +9,6 @@
 enabled_site_setting :highest_post_enabled
 
 after_initialize do
-  ##
-  # Extend Topic with a has_one association for highest_post
-  #
   module ::HighestPost
     def self.prepended(base)
       base.has_one :highest_post,
@@ -30,26 +27,17 @@ after_initialize do
 
   register_topic_preloader_associations(:highest_post)
 
-  ##
-  # Serializer: highest_post_excerpt
-  #
-  # Uses PrettyText.excerpt with the new Discourse option `keep_images: true`
-  # This ensures images stay in the excerpt instead of being stripped or replaced.
-  #
   add_to_serializer(:topic_list_item, :highest_post_excerpt) do
     post = object.highest_post
     next nil unless post
-
+  
     PrettyText.excerpt(
       post.cooked,
       length: SiteSetting.post_excerpt_maxlength,
-      keep_images: true,
+      keep_images: true
     )
   end
 
-  ##
-  # Ensure the serializer field is included
-  #
   add_to_serializer(:topic_list_item, :include_highest_post_excerpt?) do
     SiteSetting.highest_post_enabled
   end
