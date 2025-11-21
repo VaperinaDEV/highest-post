@@ -33,7 +33,7 @@ after_initialize do
   
     PrettyText.excerpt(
       post.cooked,
-      length: SiteSetting.post_excerpt_maxlength,
+      SiteSetting.post_excerpt_maxlength,
       keep_images: true
     )
   end
