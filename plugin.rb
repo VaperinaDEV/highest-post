@@ -5,7 +5,6 @@
 # version: 0.0.4
 # authors: dsims (updated by Don)
 # url: https://github.com/dsims/discourse-highest-post
-# required_version: 3.6.0
 
 enabled_site_setting :highest_post_enabled
 
