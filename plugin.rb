@@ -2,7 +2,7 @@
 
 # name: highest-post
 # about: Adds highest_post_excerpt to TopicListItem serializer
-# version: 0.0.4
+# version: 0.0.5
 # authors: dsims (updated by Don)
 # url: https://github.com/dsims/discourse-highest-post
 
@@ -27,18 +27,18 @@ after_initialize do
 
   register_topic_preloader_associations(:highest_post)
 
-  add_to_serializer(:topic_list_item, :highest_post_excerpt) do
+  add_to_serializer(
+    :topic_list_item,
+    :highest_post_excerpt,
+    include_condition: -> { SiteSetting.highest_post_enabled }
+  ) do
     post = object.highest_post
     next nil unless post
-  
+
     PrettyText.excerpt(
       post.cooked,
       SiteSetting.post_excerpt_maxlength,
       keep_images: true
     )
-  end
-
-  add_to_serializer(:topic_list_item, :include_highest_post_excerpt?) do
-    SiteSetting.highest_post_enabled
   end
 end
