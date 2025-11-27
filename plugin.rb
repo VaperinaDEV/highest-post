@@ -2,7 +2,7 @@
 
 # name: highest-post
 # about: Adds highest_post_excerpt to TopicListItem serializer
-# version: 0.0.5
+# version: 0.0.6
 # authors: dsims (updated by Don)
 # url: https://github.com/dsims/discourse-highest-post
 
@@ -35,12 +35,29 @@ after_initialize do
     post = object.highest_post
     next nil unless post
 
-    PrettyText.excerpt(
+    html = PrettyText.excerpt(
       post.cooked,
       SiteSetting.post_excerpt_maxlength,
+      keep_images: true,
       strip_links: true,
-      strip_details: true,
-      keep_images: true
+      strip_details: true
     )
+
+    doc = Nokogiri::HTML::fragment(html)
+    imgs = doc.css("img:not(.emoji)")
+
+    if imgs.any?
+      first = imgs.first
+      more_count = imgs.size - 1
+
+      wrapper = Nokogiri::HTML::DocumentFragment.parse("").document.create_element("div")
+      wrapper["class"] = "highest-post-first-img-wrapper"
+      wrapper["data-more"] = more_count.to_s if more_count > 0
+
+      first.replace(wrapper)
+      wrapper.add_child(first)
+    end
+
+    doc.to_html(save_with: 0)
   end
 end
