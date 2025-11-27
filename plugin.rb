@@ -38,6 +38,8 @@ after_initialize do
     PrettyText.excerpt(
       post.cooked,
       SiteSetting.post_excerpt_maxlength,
+      strip_links: true,
+      strip_details: true,
       keep_images: true
     )
   end
