@@ -2,7 +2,7 @@
 
 # name: highest-post
 # about: Adds highest_post_excerpt to TopicListItem serializer
-# version: 0.0.6
+# version: 0.0.7
 # authors: dsims (updated by Don)
 # url: https://github.com/dsims/discourse-highest-post
 
@@ -46,11 +46,15 @@ after_initialize do
     doc = Nokogiri::HTML::fragment(html)
     imgs = doc.css("img:not(.emoji)")
 
+    imgs.each do |img|
+      img.remove_attribute("title")
+    end
+
     if imgs.any?
       first = imgs.first
       more_count = imgs.size - 1
 
-      wrapper = Nokogiri::HTML::DocumentFragment.parse("").document.create_element("div")
+      wrapper = Nokogiri::XML::Node.new("div", doc)
       wrapper["class"] = "highest-post-first-img-wrapper"
       wrapper["data-more"] = more_count.to_s if more_count > 0
 
