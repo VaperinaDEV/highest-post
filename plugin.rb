@@ -23,7 +23,7 @@ after_initialize do
   end
 
   Topic.prepend HighestPost
-  register_topic_preloader_associations(:highest_post)
+  register_topic_preloader_associations(highest_post: :localizations)
 
   add_to_serializer(
     :topic_list_item,
@@ -38,10 +38,8 @@ after_initialize do
     begin
       if defined?(PostLocalization) && SiteSetting.content_localization_enabled
         current_locale = I18n.locale.to_s
-        localization = PostLocalization
-          .where(post_id: post.id, locale: current_locale)
-          .pick(:cooked)
-        cooked_to_use = localization if localization.present?
+        localization = post.localizations.find { |l| l.locale == current_locale }
+        cooked_to_use = localization.cooked if localization&.cooked.present?
       end
     rescue => e
       Rails.logger.warn("HighestPost localization error: #{e.message}")
