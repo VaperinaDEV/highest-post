@@ -1,8 +1,7 @@
 # frozen_string_literal: true
-
 # name: highest-post
-# about: Adds highest_post_excerpt to TopicListItem serializer
-# version: 0.0.7
+# about: Adds highest_post_excerpt to TopicListItem serializer, with discourse-ai localization support
+# version: 0.1.0
 # authors: dsims (updated by Don)
 # url: https://github.com/dsims/discourse-highest-post
 
@@ -25,7 +24,13 @@ after_initialize do
 
   Topic.prepend HighestPost
 
-  register_topic_preloader_associations(:highest_post)
+  # Ha a PostLocalization modell létezik (discourse-ai content localization aktív),
+  # preloadeljük a highest_post mellé a fordításokat is
+  if defined?(PostLocalization)
+    register_topic_preloader_associations(highest_post: :post_localizations)
+  else
+    register_topic_preloader_associations(:highest_post)
+  end
 
   add_to_serializer(
     :topic_list_item,
@@ -35,8 +40,19 @@ after_initialize do
     post = object.highest_post
     next nil unless post
 
+    # Localization support: ha van PostLocalization a user locale-jére, azt használjuk
+    cooked_to_use = post.cooked
+
+    if defined?(PostLocalization)
+      current_locale = scope&.user&.locale.presence || SiteSetting.default_locale
+      if post.respond_to?(:post_localizations)
+        localization = post.post_localizations.find { |l| l.locale == current_locale }
+        cooked_to_use = localization.cooked if localization&.cooked.present?
+      end
+    end
+
     html = PrettyText.excerpt(
-      post.cooked,
+      cooked_to_use,
       SiteSetting.post_excerpt_maxlength,
       keep_images: true,
       strip_links: true,
@@ -45,19 +61,14 @@ after_initialize do
 
     doc = Nokogiri::HTML::fragment(html)
     imgs = doc.css("img:not(.emoji)")
-
-    imgs.each do |img|
-      img.remove_attribute("title")
-    end
+    imgs.each { |img| img.remove_attribute("title") }
 
     if imgs.any?
       first = imgs.first
       more_count = imgs.size - 1
-
       wrapper = Nokogiri::XML::Node.new("div", doc)
       wrapper["class"] = "highest-post-first-img-wrapper"
       wrapper["data-more"] = more_count.to_s if more_count > 0
-
       first.replace(wrapper)
       wrapper.add_child(first)
     end
