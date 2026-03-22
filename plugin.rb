@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 # name: highest-post
-# about: Adds highest_post_excerpt to TopicListItem serializer, with discourse-ai localization support
+# about: Adds highest_post_excerpt to TopicListItem serializer
 # version: 0.1.0
 # authors: dsims (updated by Don)
 # url: https://github.com/dsims/discourse-highest-post
@@ -23,14 +23,7 @@ after_initialize do
   end
 
   Topic.prepend HighestPost
-
-  # Ha a PostLocalization modell létezik (discourse-ai content localization aktív),
-  # preloadeljük a highest_post mellé a fordításokat is
-  if defined?(PostLocalization)
-    register_topic_preloader_associations(highest_post: :post_localizations)
-  else
-    register_topic_preloader_associations(:highest_post)
-  end
+  register_topic_preloader_associations(:highest_post)
 
   add_to_serializer(
     :topic_list_item,
@@ -40,15 +33,19 @@ after_initialize do
     post = object.highest_post
     next nil unless post
 
-    # Localization support: ha van PostLocalization a user locale-jére, azt használjuk
     cooked_to_use = post.cooked
 
-    if defined?(PostLocalization)
-      current_locale = scope&.user&.locale.presence || SiteSetting.default_locale
-      if post.respond_to?(:post_localizations)
+    # discourse-ai content localization support (safe, no crash if absent)
+    begin
+      if SiteSetting.respond_to?(:content_localization_enabled) &&
+         SiteSetting.content_localization_enabled &&
+         post.respond_to?(:post_localizations)
+        current_locale = scope&.user&.locale.presence || SiteSetting.default_locale
         localization = post.post_localizations.find { |l| l.locale == current_locale }
         cooked_to_use = localization.cooked if localization&.cooked.present?
       end
+    rescue => e
+      Rails.logger.warn("HighestPost: localization lookup failed: #{e.message}")
     end
 
     html = PrettyText.excerpt(
