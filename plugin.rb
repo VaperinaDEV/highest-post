@@ -35,6 +35,10 @@ after_initialize do
 
     cooked_to_use = post.cooked
 
+    Rails.logger.info("HighestPost: I18n.locale=#{I18n.locale}, user_locale=#{scope&.user&.locale}, post_id=#{post.id}")
+    localization = PostLocalization.where(post_id: post.id, locale: I18n.locale.to_s).first
+    Rails.logger.info("HighestPost: found=#{localization.present?}")
+
     # discourse-ai content localization support (safe, no crash if absent)
     begin
       if SiteSetting.respond_to?(:content_localization_enabled) &&
