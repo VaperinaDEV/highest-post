@@ -74,5 +74,8 @@ after_initialize do
     def most_replied_to_users
       []
     end
+    def most_liked_by_users
+      []
+    end
   end
 end
