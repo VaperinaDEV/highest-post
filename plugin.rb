@@ -69,13 +69,4 @@ after_initialize do
 
     doc.to_html(save_with: 0)
   end
-
-  UserSummary.class_eval do
-    def most_replied_to_users
-      []
-    end
-    def most_liked_by_users
-      []
-    end
-  end
 end
